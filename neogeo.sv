@@ -299,6 +299,8 @@ localparam CONF_STR = {
 	"d5o36,Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
 	"o78,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
 	"-;",
+	"oI,Old TV,Off,On;",
+	"-;",
 	"O56,Stereo Mix,none,25%,50%,100%;",
 	"-;",
 	"RE,Reset & apply;",  // decouple manual reset from system reset 
@@ -1897,6 +1899,31 @@ video_cleaner video_cleaner
 	.VBlank_out(vblank)
 );
 
+wire bw_enable = status[50];
+
+wire [7:0] r_bw, g_bw, b_bw;
+wire hs_bw, vs_bw, hblank_bw, vblank_bw;
+
+jtframe_wirebw #(.WIN(8), .WOUT(8)) u_wirebw(
+    .clk(CLK_VIDEO),
+    .spl_in(ce_pix),
+    .r_in(r),
+    .g_in(g),
+    .b_in(b),
+    .HS_in(hs),
+    .VS_in(vs),
+    .HB_in(hblank),
+    .VB_in(vblank),
+    .enable(bw_enable),
+    .HS_out(hs_bw),
+    .VS_out(vs_bw),
+    .HB_out(hblank_bw),
+    .VB_out(vblank_bw),
+    .r_out(r_bw),
+    .g_out(g_bw),
+    .b_out(b_bw)
+);
+
 video_mixer #(.LINE_LENGTH(320), .HALF_DEPTH(0), .GAMMA(1)) video_mixer
 (
 	.*,
@@ -1905,15 +1932,15 @@ video_mixer #(.LINE_LENGTH(320), .HALF_DEPTH(0), .GAMMA(1)) video_mixer
 	.freeze_sync(),
 
 	.VGA_DE(vga_de),
-	.R(r),
-	.G(g),
-	.B(b),
+	.R(r_bw),
+	.G(g_bw),
+	.B(b_bw),
 
 	// Positive pulses.
-	.HSync(hs),
-	.VSync(vs),
-	.HBlank(hblank),
-	.VBlank(vblank)
+	.HSync(hs_bw),
+	.VSync(vs_bw),
+	.HBlank(hblank_bw),
+	.VBlank(vblank_bw)
 );
 
 endmodule
